@@ -63,6 +63,15 @@ export default function Card({ cards, wrongWords: propWrongWords, onCorrect }) {
     }
   };
 
+  const checkInput = () => {
+    if (isCorrect === null) {
+        handleCheck();
+      } else {
+        if (isCorrect) onCorrect(currentCard.id);
+        randomCard();
+      }
+  }
+
   if (!currentCard) {
     return (
       <div className="text-center mt-10 text-xl font-bold text-white">
@@ -110,7 +119,7 @@ export default function Card({ cards, wrongWords: propWrongWords, onCorrect }) {
             }`}
           />
           <button
-            onClick={handleCheck}
+            onClick={checkInput}
             className="hover:cursor-pointer bg-gray-400 px-3 py-2 rounded-md border-2 border-black w-auto hover:bg-gray-500"
           >
             <FaCheck />
