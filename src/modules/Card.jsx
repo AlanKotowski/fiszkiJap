@@ -75,7 +75,7 @@ export default function Card({ cards, wrongWords: propWrongWords, onCorrect }) {
 
   return (
     <>
-      <div className="card relative mx-auto bg-gray-400 text-black text-2xl rounded-xl border-2 border-black font-extrabold p-4 text-center w-full h-1/2 md:w-1/2 md:h-2xl flex flex-col justify-center">
+      <div className="card relative mx-auto bg-gray-400 text-black text-2xl md:rounded-xl border-2 border-black font-extrabold p-4 text-center w-full h-1/2 md:w-xl md:h-2xl flex flex-col justify-center">
         <span className="absolute top-2 right-3 text-sm text-gray-500">
           {currentCard.id}
         </span>
