@@ -50,7 +50,8 @@ export default function Card({ cards, wrongWords: propWrongWords, onCorrect }) {
   const handleClickOrEnter = () => {
     if (!hasChecked) {
       // 1. kliknięcie = sprawdzamy odpowiedź
-      const correct = inputValue.trim().toLowerCase() === currentCard.jap.toLowerCase();
+      const correct =
+        inputValue.trim().toLowerCase() === currentCard.jap.toLowerCase();
       setIsCorrect(correct);
       setHasChecked(true);
     } else {
@@ -75,7 +76,9 @@ export default function Card({ cards, wrongWords: propWrongWords, onCorrect }) {
   return (
     <>
       <div className="card relative mx-auto bg-gray-400 text-black text-2xl rounded-xl border-2 border-black font-extrabold p-4 text-center w-full h-1/2 md:w-1/2 md:h-2xl flex flex-col justify-center">
-        <span className="absolute top-2 right-3 text-sm text-gray-500">{currentCard.id}</span>
+        <span className="absolute top-2 right-3 text-sm text-gray-500">
+          {currentCard.id}
+        </span>
         <h1 className="mt-6">{currentCard.pol}</h1>
 
         {isCorrect === true && (
@@ -96,6 +99,7 @@ export default function Card({ cards, wrongWords: propWrongWords, onCorrect }) {
 
         <div className="flex justify-center items-center mt-6 gap-2">
           <input
+            autoFocus
             type="text"
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
