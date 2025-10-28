@@ -1,29 +1,36 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
-import { FaCheck, FaTimes, FaRandom } from "react-icons/fa"; // FaRandom dla losowania
+import { useState, useEffect, useMemo } from "react";
+import { FaCheck, FaTimes, FaRandom } from "react-icons/fa";
 
 export default function Card({ cards, wrongWords: propWrongWords, onCorrect }) {
   const [index, setIndex] = useState(0);
   const [inputValue, setInputValue] = useState("");
-  const [isCorrect, setIsCorrect] = useState(null); // null = nie sprawdzono
-  const [checked, setChecked] = useState(false); // czy pierwsze kliknięcie / Enter
+  const [isCorrect, setIsCorrect] = useState(null); // null = jeszcze nie sprawdzono
+  const [hasChecked, setHasChecked] = useState(false); // czy użytkownik już kliknął pierwszy raz
 
+  // Lista dostępnych kart (bez natychmiastowego filtrowania w parent)
   const availableCards = useMemo(() => {
     const validWrongWords = Array.isArray(propWrongWords) ? propWrongWords : [];
     return cards.filter((c) => validWrongWords.includes(c.id));
   }, [cards, propWrongWords]);
 
-  const currentCard =
-    availableCards.length > 0
-      ? availableCards[index % availableCards.length]
-      : null;
+  const currentCard = availableCards[index] || null;
 
-  const resetState = useCallback(() => {
+  // Ustaw pierwszą kartę po załadowaniu lub zmianie listy
+  useEffect(() => {
+    if (availableCards.length > 0) {
+      setIndex(Math.floor(Math.random() * availableCards.length));
+    }
+  }, [availableCards]);
+
+  // Reset stanu po losowaniu nowej karty
+  const resetState = () => {
     setInputValue("");
     setIsCorrect(null);
-    setChecked(false);
-  }, []);
+    setHasChecked(false);
+  };
 
-  const randomCard = useCallback(() => {
+  // Funkcja losująca nową kartę
+  const handleNext = () => {
     if (availableCards.length === 0) return;
 
     let newIndex;
@@ -37,34 +44,24 @@ export default function Card({ cards, wrongWords: propWrongWords, onCorrect }) {
 
     setIndex(newIndex);
     resetState();
-  }, [availableCards, index, resetState]);
+  };
 
-  useEffect(() => {
-    if (availableCards.length > 0) {
-      const firstIndex = Math.floor(Math.random() * availableCards.length);
-      setIndex(firstIndex);
-    }
-  }, [availableCards.length]);
-
-  const handleCheckOrNext = () => {
-    if (!currentCard) return;
-
-    if (!checked) {
-      // Pierwsze kliknięcie = sprawdzenie odpowiedzi
+  // Obsługa kliknięcia lub Enter
+  const handleClickOrEnter = () => {
+    if (!hasChecked) {
+      // 1. kliknięcie = sprawdzamy odpowiedź
       const correct = inputValue.trim().toLowerCase() === currentCard.jap.toLowerCase();
       setIsCorrect(correct);
-      setChecked(true);
-
-      // jeśli od razu chcemy dodać do learned, można tu:
-      if (correct) onCorrect(currentCard.id);
+      setHasChecked(true);
     } else {
-      // Drugie kliknięcie = losowanie nowej fiszki
-      randomCard();
+      // 2. kliknięcie = dopiero teraz wywołujemy onCorrect i losujemy nową kartę
+      if (isCorrect) onCorrect(currentCard.id);
+      handleNext();
     }
   };
 
   const handleKeyDown = (e) => {
-    if (e.key === "Enter") handleCheckOrNext();
+    if (e.key === "Enter") handleClickOrEnter();
   };
 
   if (!currentCard) {
@@ -78,9 +75,7 @@ export default function Card({ cards, wrongWords: propWrongWords, onCorrect }) {
   return (
     <>
       <div className="card relative mx-auto bg-gray-400 text-black text-2xl rounded-xl border-2 border-black font-extrabold p-4 text-center w-full h-1/2 md:w-1/2 md:h-2xl flex flex-col justify-center">
-        <span className="absolute top-2 right-3 text-sm text-gray-500">
-          {currentCard.id}
-        </span>
+        <span className="absolute top-2 right-3 text-sm text-gray-500">{currentCard.id}</span>
         <h1 className="mt-6">{currentCard.pol}</h1>
 
         {isCorrect === true && (
@@ -114,11 +109,10 @@ export default function Card({ cards, wrongWords: propWrongWords, onCorrect }) {
             }`}
           />
           <button
-            onClick={handleCheckOrNext}
+            onClick={handleClickOrEnter}
             className="hover:cursor-pointer bg-gray-400 px-3 py-2 rounded-md border-2 border-black w-auto hover:bg-gray-500 flex items-center justify-center"
           >
-            {/* Zmien ikonkę w zależności od stanu */}
-            {!checked ? <FaCheck /> : <FaRandom />}
+            {!hasChecked ? <FaCheck /> : <FaRandom />}
           </button>
         </div>
       </div>
