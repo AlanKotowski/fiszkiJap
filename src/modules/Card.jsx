@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { FaCheck, FaTimes } from "react-icons/fa";
+import { FaCheck, FaTimes, FaRandom } from "react-icons/fa"; // FaRandom dla losowania
 
 export default function Card({ cards, wrongWords: propWrongWords, onCorrect }) {
   const [index, setIndex] = useState(0);
   const [inputValue, setInputValue] = useState("");
-  const [isCorrect, setIsCorrect] = useState(null);
+  const [isCorrect, setIsCorrect] = useState(null); // null = nie sprawdzono
+  const [checked, setChecked] = useState(false); // czy pierwsze kliknięcie / Enter
 
   const availableCards = useMemo(() => {
     const validWrongWords = Array.isArray(propWrongWords) ? propWrongWords : [];
@@ -19,6 +20,7 @@ export default function Card({ cards, wrongWords: propWrongWords, onCorrect }) {
   const resetState = useCallback(() => {
     setInputValue("");
     setIsCorrect(null);
+    setChecked(false);
   }, []);
 
   const randomCard = useCallback(() => {
@@ -44,37 +46,26 @@ export default function Card({ cards, wrongWords: propWrongWords, onCorrect }) {
     }
   }, [availableCards.length]);
 
-  const handleCheck = () => {
-    if (!currentCard || inputValue.trim() === "") return;
+  const handleCheckOrNext = () => {
+    if (!currentCard) return;
 
-    setIsCorrect(
-      inputValue.trim().toLowerCase() === currentCard.jap.toLowerCase()
-    );
-  };
+    if (!checked) {
+      // Pierwsze kliknięcie = sprawdzenie odpowiedzi
+      const correct = inputValue.trim().toLowerCase() === currentCard.jap.toLowerCase();
+      setIsCorrect(correct);
+      setChecked(true);
 
-  const handleKeyDown = (e) => {
-    if (e.key === "Enter") {
-      if (isCorrect === null) {
-        handleCheck();
-      } else {
-        if (isCorrect) onCorrect(currentCard.id);
-        randomCard();
-      }
+      // jeśli od razu chcemy dodać do learned, można tu:
+      if (correct) onCorrect(currentCard.id);
+    } else {
+      // Drugie kliknięcie = losowanie nowej fiszki
+      randomCard();
     }
   };
 
-  const checkInput = () => {
-  if (!currentCard) return;
-
-  const correct = inputValue.trim().toLowerCase() === currentCard.jap.toLowerCase();
-  setIsCorrect(correct);
-
-  if (correct) {
-    onCorrect(currentCard.id);
-    randomCard();
-  }
-};
-
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter") handleCheckOrNext();
+  };
 
   if (!currentCard) {
     return (
@@ -123,10 +114,11 @@ export default function Card({ cards, wrongWords: propWrongWords, onCorrect }) {
             }`}
           />
           <button
-            onClick={checkInput}
-            className="hover:cursor-pointer bg-gray-400 px-3 py-2 rounded-md border-2 border-black w-auto hover:bg-gray-500"
+            onClick={handleCheckOrNext}
+            className="hover:cursor-pointer bg-gray-400 px-3 py-2 rounded-md border-2 border-black w-auto hover:bg-gray-500 flex items-center justify-center"
           >
-            <FaCheck />
+            {/* Zmien ikonkę w zależności od stanu */}
+            {!checked ? <FaCheck /> : <FaRandom />}
           </button>
         </div>
       </div>
