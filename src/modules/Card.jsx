@@ -64,13 +64,17 @@ export default function Card({ cards, wrongWords: propWrongWords, onCorrect }) {
   };
 
   const checkInput = () => {
-    if (isCorrect === null) {
-        handleCheck();
-      } else {
-        if (isCorrect) onCorrect(currentCard.id);
-        randomCard();
-      }
+  if (!currentCard) return;
+
+  const correct = inputValue.trim().toLowerCase() === currentCard.jap.toLowerCase();
+  setIsCorrect(correct);
+
+  if (correct) {
+    onCorrect(currentCard.id);
+    randomCard();
   }
+};
+
 
   if (!currentCard) {
     return (
