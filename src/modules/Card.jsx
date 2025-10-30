@@ -1,61 +1,42 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState } from "react";
 import { FaCheck, FaTimes, FaRandom } from "react-icons/fa";
 
-export default function Card({ cards, wrongWords: propWrongWords, onCorrect }) {
-  const [index, setIndex] = useState(0);
+export default function Card({ cards, wrongWords, onCorrect, mode }) {
+  const [index, setIndex] = useState(() => {
+    const valid = cards.filter((c) => wrongWords.includes(c.id));
+    return valid.length > 0 ? Math.floor(Math.random() * valid.length) : 0;
+  });
   const [inputValue, setInputValue] = useState("");
-  const [isCorrect, setIsCorrect] = useState(null); // null = jeszcze nie sprawdzono
-  const [hasChecked, setHasChecked] = useState(false); // czy użytkownik już kliknął pierwszy raz
+  const [isCorrect, setIsCorrect] = useState(null);
+  const [hasChecked, setHasChecked] = useState(false);
 
-  // Lista dostępnych kart (bez natychmiastowego filtrowania w parent)
-  const availableCards = useMemo(() => {
-    const validWrongWords = Array.isArray(propWrongWords) ? propWrongWords : [];
-    return cards.filter((c) => validWrongWords.includes(c.id));
-  }, [cards, propWrongWords]);
-
+  const availableCards = cards.filter((c) => wrongWords.includes(c.id));
   const currentCard = availableCards[index] || null;
 
-  // Ustaw pierwszą kartę po załadowaniu lub zmianie listy
-  useEffect(() => {
-    if (availableCards.length > 0) {
-      setIndex(Math.floor(Math.random() * availableCards.length));
+  const handleNext = () => {
+    if (availableCards.length <= 1) {
+      setIndex(0);
+    } else {
+      let newIndex = index;
+      while (newIndex === index) {
+        newIndex = Math.floor(Math.random() * availableCards.length);
+      }
+      setIndex(newIndex);
     }
-  }, [availableCards]);
-
-  // Reset stanu po losowaniu nowej karty
-  const resetState = () => {
     setInputValue("");
     setIsCorrect(null);
     setHasChecked(false);
   };
 
-  // Funkcja losująca nową kartę
-  const handleNext = () => {
-    if (availableCards.length === 0) return;
-
-    let newIndex;
-    if (availableCards.length === 1) {
-      newIndex = 0;
-    } else {
-      do {
-        newIndex = Math.floor(Math.random() * availableCards.length);
-      } while (newIndex === index);
-    }
-
-    setIndex(newIndex);
-    resetState();
-  };
-
-  // Obsługa kliknięcia lub Enter
   const handleClickOrEnter = () => {
     if (!hasChecked) {
-      // 1. kliknięcie = sprawdzamy odpowiedź
+      const correctAnswer =
+        mode === "pol-romanji" ? currentCard.jap : currentCard.pol;
       const correct =
-        inputValue.trim().toLowerCase() === currentCard.jap.toLowerCase();
+        inputValue.trim().toLowerCase() === correctAnswer.toLowerCase();
       setIsCorrect(correct);
       setHasChecked(true);
     } else {
-      // 2. kliknięcie = dopiero teraz wywołujemy onCorrect i losujemy nową kartę
       if (isCorrect) onCorrect(currentCard.id);
       handleNext();
     }
@@ -67,63 +48,68 @@ export default function Card({ cards, wrongWords: propWrongWords, onCorrect }) {
 
   if (!currentCard) {
     return (
-      <div className="text-center mt-10 text-xl font-bold text-white">
+      <div className="text-center mt-10 text-2xl font-extrabold text-white">
         Wszystkie słowa opanowane!
       </div>
     );
   }
 
+  const textClass = "text-2xl md:text-3xl font-extrabold text-center";
+
   return (
-    <>
-      <div className="card relative mx-auto bg-gray-400 text-black text-2xl md:rounded-xl border-2 border-black font-extrabold p-4 text-center w-full h-1/2 md:w-xl md:h-2xl flex flex-col justify-center">
-        <span className="absolute top-2 right-3 text-sm text-gray-500">
-          {currentCard.id}
-        </span>
-        <h1 className="mt-6">{currentCard.pol}</h1>
+    <div className="card relative mx-auto bg-gray-400 text-black md:rounded-xl border-2 border-black p-6 text-center w-full max-w-md min-h-[12rem] flex flex-col justify-center items-center space-y-4">
+      <span className="absolute top-2 right-3 text-sm text-gray-500">
+        {currentCard.id}
+      </span>
 
-        {isCorrect === true && (
-          <div className="flex justify-center items-center mt-4 text-green-700">
-            <h1>{currentCard.jap}</h1>
-            <FaCheck className="ml-2" />
-          </div>
-        )}
-        {isCorrect === false && (
-          <div className="flex justify-center items-center mt-4 text-red-700">
-            <h1>{currentCard.jap}</h1>
-            <FaTimes className="ml-2" />
-          </div>
-        )}
-        {isCorrect === null && (
-          <div className="mt-4 text-gray-400 italic select-none">•••</div>
-        )}
+      <div className="w-full">
+        <h1 className={`${textClass} break-words`}>
+          {mode === "pol-romanji" ? currentCard.pol : currentCard.kana}
+        </h1>
+      </div>
 
-        <div className="flex justify-center items-center mt-6 gap-2">
-          <input
-            autoFocus
-            type="text"
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            onKeyDown={handleKeyDown}
-            className={`border-2 border-black bg-gray-300 px-2 py-1 text-center rounded-md focus:outline-none w-2/3 max-w-full ${
-              isCorrect === true
-                ? "bg-green-100 text-green-700 border-green-700"
-                : isCorrect === false
-                ? "bg-red-100 text-red-700 border-red-700"
-                : ""
-            }`}
-          />
-          <button
-            onClick={handleClickOrEnter}
-            className="hover:cursor-pointer bg-gray-400 px-3 py-2 rounded-md border-2 border-black w-auto hover:bg-gray-500 flex items-center justify-center"
-          >
-            {!hasChecked ? <FaCheck /> : <FaRandom />}
-          </button>
+      {isCorrect === true && (
+        <div className="flex justify-center items-center text-green-700">
+          <h1 className={textClass}>
+            {mode === "pol-romanji" ? currentCard.jap : currentCard.pol}
+          </h1>
+          <FaCheck className="ml-2" />
         </div>
-      </div>
+      )}
+      {isCorrect === false && (
+        <div className="flex justify-center items-center text-red-700">
+          <h1 className={textClass}>
+            {mode === "pol-romanji" ? currentCard.jap : currentCard.pol}
+          </h1>
+          <FaTimes className="ml-2" />
+        </div>
+      )}
+      {isCorrect === null && (
+        <div className="text-gray-400 italic select-none">•••</div>
+      )}
 
-      <div className="mt-4 text-sm italic text-white">
-        Pozostało słówek: {availableCards.length}
+      <div className="flex justify-center items-center gap-2 w-full mt-2">
+        <input
+          autoFocus
+          type="text"
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
+          onKeyDown={handleKeyDown}
+          className={`border-2 border-black bg-gray-300 px-2 py-1 text-center rounded-md focus:outline-none w-2/3 max-w-full ${textClass} ${
+            isCorrect === true
+              ? "bg-green-100 text-green-700 border-green-700"
+              : isCorrect === false
+              ? "bg-red-100 text-red-700 border-red-700"
+              : ""
+          }`}
+        />
+        <button
+          onClick={handleClickOrEnter}
+          className="hover:cursor-pointer bg-gray-400 px-3 py-2 rounded-md border-2 border-black w-auto hover:bg-gray-500 flex items-center justify-center"
+        >
+          {!hasChecked ? <FaCheck /> : <FaRandom />}
+        </button>
       </div>
-    </>
+    </div>
   );
 }
